@@ -1,0 +1,28 @@
+[
+  {
+    "id": "t1",
+    "villageId": "46598",
+    "type": "upgrade_field",
+    "target": {
+      "resource": "clay"
+    },
+    "condition": {
+      "maxLevel": 8
+    },
+    "priority": 1,
+    "status": "active"
+  },
+  {
+    "id": "t2",
+    "villageId": "46598",
+    "type": "upgrade_building",
+    "target": {
+      "gid": 15
+    },
+    "condition": {
+      "maxLevel": 10
+    },
+    "priority": 2,
+    "status": "active"
+  }
+]

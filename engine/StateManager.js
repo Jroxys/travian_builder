@@ -1,4 +1,5 @@
 import config from '../config/defaultConfig.json' with { type: 'json' };
+import { BUILDING_MAP } from "../constants/buildingMap.js";
 
 export default class StateManager {
   //active village name ? 
@@ -29,26 +30,55 @@ export default class StateManager {
     // good classı var aynı şekil
     // level bilgisi al
     // href link şöyle çalışıyor /build.php?id=26&amp;gid=15
-    async getCenter(worker) {
-      const page = worker.page;
-      let center = []
-      const centerElements = await page.locator(".buildingSlot").all();
-      for (const centerElement of centerElements) {
-        const fieldType = await centerElement.getAttribute("data-gid");
-        const centerPlace = await centerElement.getAttribute("data-aid");
-        const className = await centerElement.getAttribute("class");
-        const isBuildable = className.includes("good") && className.includes("emptyBuildingSlot");
-        //const levelText = await centerElement.locator(".labelLayer").innerText();
-        //const level = parseInt(levelText.replace(/[^0-9]/g, ""), 10);
-        center.push({
-          type: fieldType,
-          place: centerPlace,
-          isBuildable,
-          //level
+  async getBuildings(worker) {
+    const page = worker.page;
+    let buildings = [];
+
+    const buildingElements = await page.locator(".buildingSlot").all();
+
+    for (const buildingElement of buildingElements) {
+
+      const gidAttr = await buildingElement.getAttribute("data-gid");
+      const slotAttr = await buildingElement.getAttribute("data-aid");
+
+      const slotId = parseInt(slotAttr, 10);
+
+      // EMPTY SLOT
+      if (!gidAttr) {
+        buildings.push({
+          slotId,
+          empty: true
         });
+        continue;
+      }
+
+      const gidNumber = parseInt(gidAttr, 10);
+
+      const aElement = buildingElement.locator("a");
+      const aClass = await aElement.getAttribute("class");
+
+      const isBuildable =
+        aClass &&
+        !aClass.includes("notNow") &&
+        !aClass.includes("maxLevel");
+
+      const level = parseInt(
+        await aElement.getAttribute("data-level"),
+        10
+      );
+
+      buildings.push({
+        slotId,
+        gid: gidNumber,
+        name: BUILDING_MAP[gidNumber] || "Unknown",
+        level,
+        isBuildable
+      });
     }
-    return center;
-  }
+
+  return buildings;
+}
+
 
   // gid 1 wood gid 2 clay gid 3 iron gid 4 crop 
   // notnow classı var eğer notnowsa build olmuyor

@@ -52,7 +52,7 @@ export default class BotEngine {
 
   const hero = await this.stateManager.getHeroState(this.worker); */
   await this.goToVillage(village.newDid);
-  const center = await this.stateManager.getCenter(this.worker);
+  const buildings = await this.stateManager.getBuildings(this.worker);
 
   // final state
   const state = {
@@ -60,7 +60,7 @@ export default class BotEngine {
     fields,
     buildQueue,
     //hero,
-    center,
+    buildings,
     timestamp: Date.now()
   };
 
