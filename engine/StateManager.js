@@ -40,13 +40,15 @@ export default class StateManager {
 
       const gidAttr = await buildingElement.getAttribute("data-gid");
       const slotAttr = await buildingElement.getAttribute("data-aid");
+      
 
       const slotId = parseInt(slotAttr, 10);
 
       // EMPTY SLOT
-      if (!gidAttr) {
+      if (!gidAttr || gidAttr === "0") {
         buildings.push({
           slotId,
+          gid: 0,
           empty: true
         });
         continue;
@@ -57,22 +59,25 @@ export default class StateManager {
       const aElement = buildingElement.locator("a");
       const aClass = await aElement.getAttribute("class");
 
+
       const isBuildable =
         aClass &&
         !aClass.includes("notNow") &&
         !aClass.includes("maxLevel");
+        const isUnderConstruction = aClass.includes("underConstruction");
 
       const level = parseInt(
         await aElement.getAttribute("data-level"),
         10
-      );
+      ) || 0;
 
       buildings.push({
         slotId,
         gid: gidNumber,
         name: BUILDING_MAP[gidNumber] || "Unknown",
-        level,
-        isBuildable
+         level,
+        isBuildable,
+        isUnderConstruction
       });
     }
 
@@ -96,6 +101,7 @@ export default class StateManager {
       const fieldPlace = await fieldElement.getAttribute("data-aid");
       const className = await fieldElement.getAttribute("class");
       const isBuildable = className.includes("good");
+      const isUnderConstruction = className.includes("underConstruction");
       const levelText = await fieldElement.locator(".labelLayer").innerText();
       const level = parseInt(levelText.replace(/[^0-9]/g, ""), 10);
       switch (fieldType) {
@@ -114,9 +120,10 @@ export default class StateManager {
       }
       fields.push({
         type: fieldType,
-        place: fieldPlace,
+        slotId: parseInt(fieldPlace, 10),
         isBuildable,
-        level
+        level,
+        isUnderConstruction
       });
       
     }
@@ -154,7 +161,10 @@ export default class StateManager {
           
     
 }
-
+  // buraya slotId ve name gelcek
+  // burda bir şey ile slotid eşleşmesi lazım ki hangi building olduğunu anlayabilelim
+  // gid bilgisi de gelcek o gid bilgisi ile hangi binanın olduğunu anlayabiliriz
+  // gid 1 ahşap gid 2 kerpiç gid 3 demir gid 4 tahıl gibi
   async getBuildQueue(worker) {
     const page = worker.page;
     let buildQueue = [];
