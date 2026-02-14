@@ -6,34 +6,75 @@
     "slotId": 30
   },
   "condition": {
-    "maxLevel": 3
+    "maxLevel": 4
+  },
+  "priority": 1,
+  "status": "active"
+}
+,
+{
+  "id": "task-002",
+  "villageId": "28277",
+  "type": "upgrade_field",
+  "target": {
+    "slotId": 16
+  },
+  "condition": {
+    "maxLevel": 6
+  },
+  "priority": 1,
+  "status": "active"
+},
+{
+  "id": "task-006",
+  "villageId": "29480",
+  "type": "upgrade_building",
+  "target": {
+    "slotId": 26
+  },
+  "condition": {
+    "maxLevel": 2
   },
   "priority": 1,
   "status": "active"
 },
 
 {
-  "id": "task-003",
-  "villageId": "28277",
+  "id": "task-007",
+  "villageId": "29480",
   "type": "upgrade_field",
   "target": {
-    "slotId": 17
+    "slotId": 10
   },
   "condition": {
-    "maxLevel": 7
+    "maxLevel": 6
   },
   "priority": 1,
   "status": "active"
 },
 {
-  "id": "task-002",
-  "villageId": "28277",
+  "id": "task-004",
+  "villageId": "29477",
   "type": "upgrade_building",
   "target": {
-    "slotId": 32
+    "slotId": 30
   },
   "condition": {
     "maxLevel": 4
+  },
+  "priority": 1,
+  "status": "active"
+}
+,
+{
+  "id": "task-005",
+  "villageId": "29477",
+  "type": "upgrade_field",
+  "target": {
+    "slotId": 13
+  },
+  "condition": {
+    "maxLevel": 6
   },
   "priority": 1,
   "status": "active"

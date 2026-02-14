@@ -37,15 +37,10 @@ export default class TaskManager {
   const slotId = task.target.slotId;
   const maxLevel = task.condition.maxLevel;
  
-console.log("Max level:", maxLevel);
 
 const building = state.buildings.find(
   b => String(b.slotId) === String(slotId)
 );
-    console.log("Building found:", building);
-    console.log("Building level:", building.level);
- 
-   console.log("Is under construction:", building.isUnderConstruction);
 
    const effectiveLevel = Number(building.level) + (building.isUnderConstruction ? 1 : 0);
    if (effectiveLevel >= maxLevel) {
@@ -77,7 +72,7 @@ const building = state.buildings.find(
 
 
   return {
-    type: "upgrade_building",
+    action: "upgrade_building",
     slotId: building.slotId
   };
 }
@@ -92,17 +87,13 @@ const building = state.buildings.find(
     const field = state.fields.find(
       f => f.slotId === slotId
     );
-    console.log("Evaluate için bilgi burası")
-    console.log("Field found:", field);
-    console.log("Field level:", field.level);
-    console.log("Is under construction:", field.isUnderConstruction);
 
     if (!field) {
       console.log("Task invalid: field not found");
       return null;
     }
 
-    if (field.level >= maxLevel) {
+    if (Number(field.level) >= Number(maxLevel)) {
       console.log("Task completed: max level reached");
       task.status = "completed";
       return null;
@@ -113,7 +104,7 @@ const building = state.buildings.find(
       return null;
     }
 
-    if (state.buildQueue.length > 0) {
+    if (state.buildQueue.length > 1) {
       console.log("Build queue not empty");
       return null;
     }
