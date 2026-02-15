@@ -28,6 +28,11 @@ export default class BotEngine {
   async collectVillageState(villageId) {
 
     console.log(`\nCollecting state for village ${villageId}`);
+    await this.goToHeroState();
+    const heroState = await this.stateManager.getHeroAttiributes(this.worker);
+
+    await this.goToAdventures();
+    const heroAdventures = await this.stateManager.getHeroAdventures(this.worker);
 
     await this.goToField(villageId);
 
@@ -44,6 +49,8 @@ export default class BotEngine {
       fields,
       buildQueue,
       buildings,
+      heroState,
+      heroAdventures,
       timestamp: Date.now()
     };
 
@@ -164,6 +171,14 @@ export default class BotEngine {
     console.log("Building upgrade not available.");
     return false;
   }
+  async buildNewBuilding(slotId){
+        const page = this.worker.page;
+
+    console.log("New building slot:", slotId);
+    await page.goto(`${this.config.serverUrl}/build.php?id=${slotId}`);
+    await page.waitForLoadState("networkidle");
+
+  }
 
   async goToField(newDid) {
     await this.worker.page.goto(
@@ -175,6 +190,13 @@ export default class BotEngine {
     await this.worker.page.goto(
       `${this.config.serverUrl}/dorf2.php?newdid=${newDid}`
     );
+  }
+  async goToHeroState(){
+  
+    await this.worker.page.goto(`${this.config.serverUrl}/hero/attributes`);
+  }
+  async goToAdventures(){
+    await this.worker.page.goto(`${this.config.serverUrl}/hero/adventures`,{waitUntil: "networkidle"});
   }
 
   async start() {
@@ -193,8 +215,13 @@ export default class BotEngine {
       for (const village of villages) {
         await this.processVillage(village);
       }
+    
 
-      await randomDelay(600, 120000);
+      await randomDelay(20000, 120000);
     }
   }
 }
+
+
+// heroyu maceraya yollama işi health çektiken sonra eğer canı 30'un üstündeyse yollasın
+// empty slota bina yapma işi ekleme

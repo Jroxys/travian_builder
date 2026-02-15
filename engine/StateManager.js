@@ -2,28 +2,43 @@ import config from '../config/defaultConfig.json' with { type: 'json' };
 import { BUILDING_MAP } from "../constants/buildingMap.js";
 
 export default class StateManager {
-  //active village name ? 
-  //newdidleri al ve o didlerle  ts30.x3.international.travian.com/dorf1.php?newdid=33123 gibi url'lere giderek her köyün durumunu al
-  // newdidlerle köye gidiyor doğru köyü böyle seçiyor.
-/* 
-  async refresh(worker) {
+    async getHeroAttiributes(worker) {
+        const page = worker.page;
+        let heroState = {health: 0, experience: 0};
+         await page.waitForLoadState("networkidle");
+      const statsTable = page.locator(".stats");
+      const health = await statsTable.locator(".value").nth(0).innerText();
+      const experience = await statsTable.locator(".value").nth(1).innerText();
+      heroState.health = health;
+      heroState.experience = experience;
 
-      const economy = await this.getEconomy(worker);
-      const villageList = await this.getVillageList(worker);
-      const buildQueue = await this.getBuildQueue(worker);
-      const fields = await this.getFields(worker);
-      const hero = await this.getHeroState(worker);
+      return heroState;
+    }
+    async getHeroAdventures(worker) {
+      const page = worker.page;
+      const adventureTable =  page.locator("table.adventureList");
+          console.log("Adventure table found:", await adventureTable.count() > 0);
+          const adventureTBody =  adventureTable.locator("tbody");
+          const adventureRows = await adventureTBody.locator("tr").all();   
+          let adventures = [];
+             for (const row of adventureRows) {
+              const noAdventureClass = await row.locator("td").all();
+                 if (noAdventureClass.length === 1) {
+            console.log("No adventures found for hero.");
+            return null;
+          }
+            const distance = await row.locator("td.distance").innerText();
+            const duration = await row.locator("td.duration .duration").innerText();
+            adventures.push({
+              distance,
+              duration
+            })
+           }
+           return adventures;
+          
+    }
       
 
-    return {
-      villageList,
-      economy,
-      buildQueue,
-      fields,
-      hero,
-      timestamp: Date.now()
-    };
-  } */
 
     // data gid yine her binanın aynı 0 empty slot 
     // data aid slot 
@@ -44,7 +59,7 @@ export default class StateManager {
 
       const slotId = parseInt(slotAttr, 10);
 
-      // EMPTY SLOT
+     
       if (!gidAttr || gidAttr === "0") {
         buildings.push({
           slotId,
