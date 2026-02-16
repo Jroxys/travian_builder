@@ -23,12 +23,13 @@ export default class TaskManager {
   return this.tasks.filter(
     t =>
       t.status === "active" &&
-      String(t.villageId) === String(villageId)
+      String(t.villageId) === String(villageId)&&
+      t.type  != "send_hero_adventure"
   ) .sort((a, b) => a.priority - b.priority);
   }
 
 
-  evaluate(task, state) {
+  evaluateVillage(task, state) {
 
     switch (task.type) {
       case "upgrade_building":
@@ -37,13 +38,23 @@ export default class TaskManager {
         return this.evaluateUpgradeField(task, state);
       case "new_building":
         return this.evaluateNewBuilding(task, state);
-      case "send_hero_adventure":
-        return this.evaulateHeroAdventure(task,state);
+   
       default:
         console.log("Unknown task type:", task.type);
         return null;
     }     
   }
+
+  evaluateHero(task,heroState){   
+     switch (task.type) {
+      case "send_hero_adventure":
+        return this.evaulateHeroAdventure(task, heroState);
+      default:
+        console.log("Unknown task type:", task.type);
+        return null;
+    }     
+  }
+
 
   getExecutableTasksForHero(){
     return this.getTasksForHero();
@@ -70,7 +81,7 @@ export default class TaskManager {
   async evaulateHeroAdventure(task,state){
     if(!state) {return null;}
     const health = parseInt(state.health.replace(/[^0-9]/g, ""), 10)
-     const availableAdventureIndex = state.adventures.findIndex(a => a.isAvailable === true);
+     
   
     if (!state.adventures || state.adventures.length === 0)
     {
@@ -79,7 +90,7 @@ export default class TaskManager {
  
  
 
-    if (availableAdventureIndex === -1) {
+    if (state.isRunning === true) {
       console.log("No available adventure.");
       return null;
   }
@@ -90,7 +101,6 @@ export default class TaskManager {
     // sonra en kısa süreli ve en kolay adventureyi seç özelliği getir
     return {
       action: "send_hero_adventure",
-      adventureIndex: availableAdventureIndex
     };
 }
 

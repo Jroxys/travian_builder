@@ -105,10 +105,10 @@ export default class BotEngine {
     const tasks = this.taskManager.getExecutableTasksForVillage(village.newDid,state);
 
     let executedSomething = false;
-
+    
     for (const task of tasks) {
 
-      const decision = await this.taskManager.evaluate(task, state);
+      const decision = await this.taskManager.evaluateVillage(task, state);
 
       if (!decision) continue;
 
@@ -180,7 +180,7 @@ export default class BotEngine {
         const page = this.worker.page;
         const btn = page.locator("button.textButtonV2.green").first();
     
-
+        // eğer disabled ise yine hero sent to adventure diyor bu düzelicek
         if (await btn.count() > 0) {
           await btn.click();
           console.log("Hero sent to adventure.");
@@ -308,13 +308,13 @@ async buildNewBuilding(slotId, gid) {
 
  async processHeroTasks() {
 
-  const state = this.heroCache;
+  const heroState = this.heroCache;
 
   const tasks = this.taskManager.getExecutableTasksForHero();
 
   for (const task of tasks) {
 
-    const decision = await this.taskManager.evaluate(task, state);
+    const decision = await this.taskManager.evaluateHero(task, heroState);
 
     if (!decision) continue;
 

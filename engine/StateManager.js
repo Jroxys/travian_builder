@@ -4,13 +4,19 @@ import { BUILDING_MAP } from "../constants/buildingMap.js";
 export default class StateManager {
     async getHeroAttiributes(worker) {
       const page = worker.page;
-      let heroState = {health: 0, experience: 0};
+      let heroState = {health: 0, experience: 0 , isRunning: null};
       await page.waitForLoadState("networkidle");
-      const statsTable = page.locator(".stats");
+      const statsTable = await page.locator(".stats");
       const health = await statsTable.locator(".value").nth(0).innerText();
       const experience = await statsTable.locator(".value").nth(1).innerText();
+       const runningIcon = page.locator("i.heroRunning");
+      let  isRunning =  false;
+          if (await runningIcon.count() > 0) {
+               isRunning = true;
+            }
       heroState.health = health;
       heroState.experience = experience;
+      heroState.isRunning = isRunning;
 
       return heroState;
     }
@@ -18,9 +24,8 @@ export default class StateManager {
       const page = worker.page;
       await page.waitForLoadState("networkidle")
       const adventureTable = await page.locator("table.adventureList");
-      const btn = page.locator("button.textButtonV2.green").first();
-      const isAvailable = await btn.isDisabled();
-          const adventureTBody =  adventureTable.locator("tbody");
+     
+          const adventureTBody = await adventureTable.locator("tbody");
           const adventureRows = await adventureTBody.locator("tr").all();   
           let adventures = [];
              for (const row of adventureRows) {
@@ -33,8 +38,7 @@ export default class StateManager {
             const duration = await row.locator("td.duration .duration").innerText();
             adventures.push({
               distance,
-              duration,
-              isAvailable
+              duration
             })
            }
            return adventures;
