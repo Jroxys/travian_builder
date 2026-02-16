@@ -3,9 +3,9 @@ import { BUILDING_MAP } from "../constants/buildingMap.js";
 
 export default class StateManager {
     async getHeroAttiributes(worker) {
-        const page = worker.page;
-        let heroState = {health: 0, experience: 0};
-         await page.waitForLoadState("networkidle");
+      const page = worker.page;
+      let heroState = {health: 0, experience: 0};
+      await page.waitForLoadState("networkidle");
       const statsTable = page.locator(".stats");
       const health = await statsTable.locator(".value").nth(0).innerText();
       const experience = await statsTable.locator(".value").nth(1).innerText();
@@ -16,8 +16,10 @@ export default class StateManager {
     }
     async getHeroAdventures(worker) {
       const page = worker.page;
-      const adventureTable =  page.locator("table.adventureList");
-          console.log("Adventure table found:", await adventureTable.count() > 0);
+      await page.waitForLoadState("networkidle")
+      const adventureTable = await page.locator("table.adventureList");
+      const btn = page.locator("button.textButtonV2.green").first();
+      const isAvailable = await btn.isDisabled();
           const adventureTBody =  adventureTable.locator("tbody");
           const adventureRows = await adventureTBody.locator("tr").all();   
           let adventures = [];
@@ -31,7 +33,8 @@ export default class StateManager {
             const duration = await row.locator("td.duration .duration").innerText();
             adventures.push({
               distance,
-              duration
+              duration,
+              isAvailable
             })
            }
            return adventures;
@@ -197,17 +200,6 @@ export default class StateManager {
        }
       return buildQueue;
 
-  }
-
-  async getHeroState(worker) {
-    const page = worker.page;
-    let heroState = {health: 0, experience: 0};
-    await page.goto(config.serverUrl+"/hero/attributes");
-    const heroHealth = await page.locator(".stats").locator(".value").nth(0).innerText();
-    const heroExperience = await page.locator(".stats").locator(".value").nth(1).innerText();
-    heroState.health = heroHealth;
-    heroState.experience = heroExperience;
-  return heroState;
   }
 
   async getEconomy(worker) {

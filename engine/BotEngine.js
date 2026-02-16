@@ -5,6 +5,9 @@ import { login } from "../modules/login.js";
 import { randomDelay } from "../utils/delay.js";
 
 export default class BotEngine {
+  // maceraya gönderme yapılacak
+  // optimize etmeye çalış her seferinde state almasın her seferinde hero checklemesin
+  // bundan sonrası biraz detaylı optimize olmalı optimize tamamlandıktan sonra multi  denemeleri yapılsın.
 
   constructor(config) {
     this.config = config;
@@ -12,6 +15,8 @@ export default class BotEngine {
     this.stateManager = new StateManager();
     this.taskManager = new TaskManager();
     this.villageStateCache = {};
+    this.heroCache = null;
+    this.heroLastUpdated = 0;
   }
 
   updateVillageState(villageId, state) {
@@ -28,14 +33,7 @@ export default class BotEngine {
   async collectVillageState(villageId) {
 
     console.log(`\nCollecting state for village ${villageId}`);
-    await this.goToHeroState();
-    const heroState = await this.stateManager.getHeroAttiributes(this.worker);
-
-    await this.goToAdventures();
-    const heroAdventures = await this.stateManager.getHeroAdventures(this.worker);
-
     await this.goToField(villageId);
-
     const economy = await this.stateManager.getEconomy(this.worker);
     const fields = await this.stateManager.getFields(this.worker);
     const buildQueue = await this.stateManager.getBuildQueue(this.worker);
@@ -49,8 +47,6 @@ export default class BotEngine {
       fields,
       buildQueue,
       buildings,
-      heroState,
-      heroAdventures,
       timestamp: Date.now()
     };
 
@@ -58,50 +54,87 @@ export default class BotEngine {
 
     return state;
   }
+  patchVillageState(villageId, decision) {
 
-  async processVillage(village) {
+  const state = this.villageStateCache[villageId];
+  if (!state) return;
 
-    console.log(`\n=== Processing village ${village.newDid} ===`);
+  if (decision.action === "upgrade_field") {
 
-    let continueVillage = true;
-
-    while (continueVillage) {
-
-      const state = await this.collectVillageState(village.newDid);
-
-      if (state.buildQueue.length >= 2) {
-        console.log("Queue full. Skipping village.");
-        return;
-      }
-
-      const tasks = this.taskManager.getTasksForVillage(village.newDid);
-
-      let executedSomething = false;
-
-      for (const task of tasks) {
-
-        const decision = this.taskManager.evaluate(task, state);
-
-        if (!decision) continue;
-
-        console.log("Executing task:", task.type);
-
-        const success = await this.execute(decision, village.newDid);
-
-        if (success) {
-          executedSomething = true;
-          break; // state değişti → tekrar değerlendir
-        }
-      }
-
-      if (!executedSomething) {
-        continueVillage = false;
-        console.log("No executable tasks left for village.");
-      }
+    const field = state.fields.find(f => f.slotId === decision.slotId);
+    if (field) {
+      field.isUnderConstruction = true;
+      state.buildQueue.push({ type: "field", slotId: decision.slotId });
     }
   }
 
+  if (decision.action === "upgrade_building") {
+
+    const building = state.buildings.find(b => b.slotId === decision.slotId);
+    if (building) {
+      building.isUnderConstruction = true;
+      state.buildQueue.push({ type: "building", slotId: decision.slotId });
+    }
+  }
+
+  if (decision.action === "new_building") {
+
+    state.buildings.push({
+      slotId: decision.slotId,
+      gid: decision.gid,
+      level: 1,
+      isUnderConstruction: true
+    });
+
+    state.buildQueue.push({ type: "building", slotId: decision.slotId });
+  }
+}
+
+  
+
+  async processVillage(village) {
+
+  console.log(`\n=== Processing village ${village.newDid} ===`);
+
+  let state = await this.collectVillageState(village.newDid);
+
+  let continueVillage = true;
+
+  while (continueVillage) {
+
+    const tasks = this.taskManager.getExecutableTasksForVillage(village.newDid,state);
+
+    let executedSomething = false;
+
+    for (const task of tasks) {
+
+      const decision = await this.taskManager.evaluate(task, state);
+
+      if (!decision) continue;
+
+      console.log("Executing task:", task.type);
+
+      const success = await this.execute(decision, village.newDid);
+
+      if (success) {
+
+        this.patchVillageState(village.newDid, decision);
+
+        executedSomething = true;
+        break;
+      }
+    }
+
+    if (!executedSomething) {
+      continueVillage = false;
+      console.log("No executable tasks left for village.");
+    }
+  }
+}
+
+
   async execute(decision, villageId) {
+    console.log("Executing decision:", decision);
 
     try {
 
@@ -118,6 +151,17 @@ export default class BotEngine {
         return await this.upgradeBuilding(decision.slotId);
 
       }
+      if (decision.action === "new_building") {
+        await this.goToVillage(villageId);
+        return await this.buildNewBuilding(decision.slotId, decision.gid);
+      }
+      if (decision.action === "send_hero_adventure") {
+          const success = await this.sendHeroToAdventure();
+            if (success) {
+              this.heroLastUpdated = 0; // invalidate
+            }
+            return success;
+        }
 
       console.log("Unknown action:", decision.action);
       return false;
@@ -127,6 +171,29 @@ export default class BotEngine {
       return false;
     }
   }
+  async sendHeroToAdventure() {
+        const hero = await this.collectHeroState();
+        if (!hero) return false;
+
+        await this.goToAdventures();
+
+        const page = this.worker.page;
+        const btn = page.locator("button.textButtonV2.green").first();
+    
+
+        if (await btn.count() > 0) {
+          await btn.click();
+          console.log("Hero sent to adventure.");
+
+          // hero cache invalidate
+          this.heroLastUpdated = 0;
+
+          return true;
+        }
+
+        return false;
+}
+
 
   async upgradeField(slotId) {
 
@@ -149,6 +216,8 @@ export default class BotEngine {
     console.log("Field upgrade not available.");
     return false;
   }
+  // TEMP: using URL-based detection for upgrade/construct
+// Will refactor to state-based decision later
 
   async upgradeBuilding(slotId) {
 
@@ -157,28 +226,42 @@ export default class BotEngine {
     console.log("Upgrading building slot:", slotId);
 
     await page.goto(`${this.config.serverUrl}/build.php?id=${slotId}`);
-
     await page.waitForLoadState("networkidle");
-
     const buildBtn = page.locator("button.green.build");
-
     if (await buildBtn.count() > 0) {
-      await buildBtn.first().click();
-      console.log("Building upgrade started.");
-      return true;
-    }
+        await buildBtn.first().click();
+        console.log("Building upgrade started.");
+        return true;
+        }
 
-    console.log("Building upgrade not available.");
-    return false;
+      console.log("Building upgrade not available.");
+      return false;
   }
-  async buildNewBuilding(slotId){
-        const page = this.worker.page;
+async buildNewBuilding(slotId, gid) {
 
-    console.log("New building slot:", slotId);
-    await page.goto(`${this.config.serverUrl}/build.php?id=${slotId}`);
-    await page.waitForLoadState("networkidle");
+  const page = this.worker.page;
 
+  console.log("Constructing new building:", gid, "in slot:", slotId);
+
+  await page.goto(
+    `${this.config.serverUrl}/build.php?id=${slotId}`
+  );
+
+  await page.waitForLoadState("networkidle");
+
+  const contractWrapper = page.locator(`#contract_building${gid}`);
+  const buildBtn = contractWrapper.locator("button.green.new");
+
+  if (await buildBtn.count() > 0) {
+    await buildBtn.first().click();
+    console.log("New building construction started.");
+    return true;
   }
+
+  console.log("New building not available.");
+  return false;
+}
+
 
   async goToField(newDid) {
     await this.worker.page.goto(
@@ -192,18 +275,66 @@ export default class BotEngine {
     );
   }
   async goToHeroState(){
-  
-    await this.worker.page.goto(`${this.config.serverUrl}/hero/attributes`);
+    await this.worker.page.goto(`${this.config.serverUrl}/hero/attributes`)
   }
-  async goToAdventures(){
-    await this.worker.page.goto(`${this.config.serverUrl}/hero/adventures`,{waitUntil: "networkidle"});
+    async goToAdventures(){
+    await this.worker.page.goto(`${this.config.serverUrl}/hero/adventures`)
   }
+  async collectHeroState(force = false) {
 
+    const now = Date.now();
+
+      if (!force && this.heroCache && (now - this.heroLastUpdated < 180000)) {
+        return this.heroCache;
+      }
+
+      console.log("Refreshing hero state...");
+
+      await this.goToHeroState();
+      const heroState = await this.stateManager.getHeroAttiributes(this.worker);
+
+      await this.goToAdventures();
+      const heroAdventures = await this.stateManager.getHeroAdventures(this.worker);
+      
+
+      this.heroCache = {
+        ...heroState,
+        adventures: heroAdventures
+      };
+      this.heroLastUpdated = now;
+
+      return this.heroCache;
+} 
+
+ async processHeroTasks() {
+
+  const state = this.heroCache;
+
+  const tasks = this.taskManager.getExecutableTasksForHero();
+
+  for (const task of tasks) {
+
+    const decision = await this.taskManager.evaluate(task, state);
+
+    if (!decision) continue;
+
+    console.log("Executing hero task:", task.type);
+
+    const success = await this.execute(decision);
+
+    if (success) {
+      this.heroLastUpdated = 0; 
+      break;
+    }
+  }
+}
+
+  
   async start() {
 
     await this.worker.launch();
     await login(this.worker, this.config);
-
+   
     const villages = await this.stateManager.getVillageList(this.worker);
 
     while (true) {
@@ -211,12 +342,11 @@ export default class BotEngine {
       console.log("\n====================");
       console.log("=== NEW CYCLE ===");
       console.log("====================");
-
+      const hero = await this.collectHeroState();
+      await this.processHeroTasks();
       for (const village of villages) {
-        await this.processVillage(village);
+        await this.processVillage(village , hero);
       }
-    
-
       await randomDelay(20000, 120000);
     }
   }
