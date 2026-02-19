@@ -1,5 +1,42 @@
+
 {
-    "serverUrl" : "https://hux.x3.hungary.travian.com",
-    "username" : "okilic1049@gmail.com",
-    "password" : "@Omer1049+1049!"
+    "accounts":[
+        {   
+    "name": "account_1",
+  "serverUrl": "https://ts20.x2.international.travian.com",
+  "username": "okilic1049@gmail.com",
+  "password": "@Omer1049+1049!",
+  "tasksFile" : "./tasks/account_1_tasks.json",
+
+
+  "fingerprint": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/121.0.0.0 Safari/537.36",
+    "viewport": { "width": 1366, "height": 768 },
+    "locale": "en-US",
+    "timezoneId": "Europe/Berlin"
+  }
+},
+ { 
+            
+    "name": "account_2",
+  "serverUrl": "https://ts20.x2.international.travian.com",
+  "username": "meditort@gmail.com",
+  "password": "omer1031+1031",
+  "tasksFile" : "./tasks/account_2_tasks.json",
+
+  "proxy": {
+    "server": "http://31.169.84.10:50100",
+    "username": "Q2R9xp",
+    "password": "AK5F7m"
+  },
+
+  "fingerprint": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/121.0.0.0 Safari/537.36",
+    "viewport": { "width": 1420, "height": 1000 },
+    "locale": "tr-TR",
+    "timezoneId": "Europe/Istanbul"
+  }
 }
+    ]
+}
+ 

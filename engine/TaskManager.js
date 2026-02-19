@@ -2,14 +2,19 @@ import fs, { stat } from "fs";
 import { type } from "os";
 
 export default class TaskManager {
-
-  constructor() {
+  // taskları sıraya göre yapsın eğer verilen 2 task yapılamıyorsa sıradaki taskları denemesin. önce o ilk 2 taskı yapmaya 
+  //çalışsın
+  // new building düzeltilecek category = 2 cart curt muhabbeti gelecek
+  // requiretmens kısmı gelecek eğer bina requirements'a uymuyorsa önce o requiretmensları tasklara ekleyecek bu db kısmına 
+  //geçince yapılacak
+  constructor(tasksFile) {
+    this.tasksFile= tasksFile;
     this.tasks = [];
     this.loadTasks();
   }
 
   loadTasks() {
-    const raw = fs.readFileSync("./config/tasks.json");
+    const raw = fs.readFileSync(this.tasksFile);
     this.tasks = JSON.parse(raw);
   }
   
@@ -218,11 +223,6 @@ const building = state.buildings.find(
 
     if (!field.isBuildable) {
       console.log("Field not buildable right now");
-      return null;
-    }
-
-    if (state.buildQueue.length >= 2) {
-      console.log("Build queue not empty");
       return null;
     }
 

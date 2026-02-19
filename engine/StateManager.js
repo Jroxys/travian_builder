@@ -124,8 +124,15 @@ export default class StateManager {
       const className = await fieldElement.getAttribute("class");
       const isBuildable = className.includes("good");
       const isUnderConstruction = className.includes("underConstruction");
-      const levelText = await fieldElement.locator(".labelLayer").innerText();
-      const level = parseInt(levelText.replace(/[^0-9]/g, ""), 10);
+
+      const labelLocator = fieldElement.locator(".labelLayer");
+      let level = 0;
+     if (await labelLocator.count() > 0) {
+    const levelText = await labelLocator.innerText();
+    // Metni temizle ve sayıya çevir, eğer sayı yoksa 0 yap
+    level = parseInt(levelText.replace(/[^0-9]/g, ""), 10) || 0;
+    console.log("Level: ",level)
+}
       switch (fieldType) {
         case "1":
           fieldType = "wood";

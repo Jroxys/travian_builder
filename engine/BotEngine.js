@@ -11,9 +11,13 @@ export default class BotEngine {
 
   constructor(config) {
     this.config = config;
+    if (!config.tasksFile) {
+      throw new Error(`[${config.name}] Config dosyasında 'tasksFile' tanımlı değil! Lütfen config.json dosyanı kontrol et.`);
+    }
     this.worker = new Worker(config);
+    this.accountName = config.name;
     this.stateManager = new StateManager();
-    this.taskManager = new TaskManager();
+    this.taskManager = new TaskManager(config.tasksFile);
     this.villageStateCache = {};
     this.heroCache = null;
     this.heroLastUpdated = 0;
@@ -178,6 +182,8 @@ export default class BotEngine {
         await this.goToAdventures();
 
         const page = this.worker.page;
+        await page.waitForLoadState("networkidle");
+
         const btn = page.locator("button.textButtonV2.green").first();
     
         // eğer disabled ise yine hero sent to adventure diyor bu düzelicek
@@ -204,6 +210,7 @@ export default class BotEngine {
     await page.goto(`${this.config.serverUrl}/build.php?id=${slotId}`);
 
     await page.waitForLoadState("networkidle");
+    
 
     const buildBtn = page.locator("button.green.build");
 
@@ -334,6 +341,7 @@ async buildNewBuilding(slotId, gid) {
 
     await this.worker.launch();
     await login(this.worker, this.config);
+    console.log(`[${this.accountName}] Login successful`)
    
     const villages = await this.stateManager.getVillageList(this.worker);
 
@@ -346,8 +354,9 @@ async buildNewBuilding(slotId, gid) {
       await this.processHeroTasks();
       for (const village of villages) {
         await this.processVillage(village , hero);
+        await randomDelay(0,7000)
       }
-      await randomDelay(20000, 120000);
+      await randomDelay(20000, 600000);
     }
   }
 }
